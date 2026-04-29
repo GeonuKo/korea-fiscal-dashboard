@@ -41,7 +41,7 @@ df = pd.DataFrame({
 })
 
 # =========================
-# LHS (총수입/총지출)
+# LHS (총수입 / 총지출)
 # =========================
 lhs_df = df.melt(
     id_vars="연도",
@@ -52,15 +52,12 @@ lhs_df = df.melt(
 
 lhs = alt.Chart(lhs_df).mark_line(point=True, strokeWidth=3).encode(
     x=alt.X("연도:O"),
-    y=alt.Y(
-        "값:Q",
-        title="총수입 / 총지출 (LHS, 조 원)"
-    ),
-    color=alt.Color("지표:N")
+    y=alt.Y("값:Q", title="총수입 / 총지출 (LHS, 조 원)"),
+    color=alt.Color("지표:N", title="LHS")
 )
 
 # =========================
-# RHS (재정수지) — 핵심 수정 부분
+# RHS (통합/관리 재정수지)
 # =========================
 rhs_df = df.melt(
     id_vars="연도",
@@ -69,25 +66,18 @@ rhs_df = df.melt(
     value_name="값"
 )
 
-# 👉 0 기준을 아래로 내리기 위한 "shift"
-rhs_df["shifted"] = rhs_df["값"] - 200  # 기준 하향 (시각적 이동)
-
 rhs = alt.Chart(rhs_df).mark_bar(opacity=0.5).encode(
     x=alt.X("연도:O"),
     y=alt.Y(
-        "shifted:Q",
+        "값:Q",
         title="재정수지 (RHS, 조 원)",
-        axis=alt.Axis(
-            labelOverlap=True,
-            tickCount=5
-        ),
-        scale=alt.Scale(zero=False)
+        scale=alt.Scale(domain=[-100, 100])  # 핵심: 고정 축 범위
     ),
-    color=alt.Color("지표:N")
+    color=alt.Color("지표:N", title="RHS")
 )
 
 # =========================
-# 결합 (dual axis 구조)
+# 결합
 # =========================
 chart = alt.layer(
     lhs,
@@ -105,10 +95,11 @@ st.title("🇰🇷 대한민국 재정 통합 분석 대시보드")
 
 st.markdown("""
 - LHS: 총수입 / 총지출  
-- RHS: 통합재정수지 / 관리재정수지 (하방 이동 적용)
+- RHS: 통합재정수지 / 관리재정수지  
+- RHS 축 범위: -100 ~ +100 고정
 """)
 
 st.altair_chart(chart, use_container_width=True)
 
 with st.expander("데이터"):
-    st.dataframe(df)
+    st.dataframe(df, use_container_width=True)
