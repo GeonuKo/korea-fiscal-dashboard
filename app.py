@@ -7,10 +7,7 @@ st.set_page_config(
     layout="wide"
 )
 
-menu = st.sidebar.radio(
-    "대한민국 국가 재정통계",
-    ["대한민국 국가 재정통계", "국가 재정 기본 개념", "총수입", "총지출"]
-)
+st.title("대한민국 국가 재정통계")
 
 # =========================
 # 데이터
@@ -42,50 +39,41 @@ df = pd.DataFrame({
 })
 
 # =========================
-# LHS LINE (총수입/총지출)
+# LHS LINE
 # =========================
-lhs_df = df.melt(
+line_df = df.melt(
     id_vars="연도",
     value_vars=["총수입", "총지출"],
     var_name="지표",
     value_name="값"
 )
 
-lhs_line = alt.Chart(lhs_df).mark_line(
+line_chart = alt.Chart(line_df).mark_line(
     point=True,
     strokeWidth=3
 ).encode(
-    x=alt.X("연도:O"),
-    y=alt.Y(
-        "값:Q",
-        title="총수입 / 총지출 (LHS, 조 원)"
-    ),
-    color=alt.Color("지표:N"),
-    order="연도"
+    x=alt.X("연도:O", title="연도"),
+    y=alt.Y("값:Q", title="총수입 / 총지출 (LHS, 조 원)"),
+    color=alt.Color("지표:N")
+).properties(
+    width=700,
+    height=600
 )
 
 # =========================
-# RHS BAR (통합 / 관리)
+# RHS BAR
 # =========================
-rhs_df = df.melt(
+bar_df = df.melt(
     id_vars="연도",
     value_vars=["통합재정수지", "관리재정수지"],
     var_name="지표",
     value_name="값"
 )
 
-rhs_bar = alt.Chart(rhs_df).mark_bar(
-    size=14,
-    opacity=0.75
+bar_chart = alt.Chart(bar_df).mark_bar(
+    size=16
 ).encode(
     x=alt.X("연도:O"),
-    xOffset=alt.XOffset(
-        "지표:N",
-        scale=alt.Scale(
-            paddingInner=0.02,   # 간격 더 좁힘
-            paddingOuter=0.05
-        )
-    ),
     y=alt.Y(
         "값:Q",
         title="재정수지 (RHS, 조 원)",
@@ -97,24 +85,21 @@ rhs_bar = alt.Chart(rhs_df).mark_bar(
             domain=["통합재정수지", "관리재정수지"],
             range=["#1f77b4", "#d62728"]
         )
-    )
-)
-
-# =========================
-# 결합 (핵심 수정 포인트)
-# =========================
-chart = alt.layer(
-    rhs_bar,   # bar 먼저
-    lhs_line   # line 위로 올림 (중요)
-).resolve_scale(
-    y="independent"
+    ),
+    xOffset="지표:N"
 ).properties(
-    height=800
+    width=700,
+    height=600
 )
 
 # =========================
-# 출력
+# 핵심: layer 금지 → concat 사용
 # =========================
-st.title("대한민국 국가 재정통계")
+final_chart = alt.hconcat(
+    line_chart,
+    bar_chart
+).resolve_scale(
+    y="shared"
+)
 
-st.altair_chart(chart, use_container_width=True)
+st.altair_chart(final_chart, use_container_width=True)
