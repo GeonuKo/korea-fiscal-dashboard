@@ -22,25 +22,21 @@ years_fin = list(range(2011, 2025))
 
 df_fin = pd.DataFrame({
     "연도": years_fin,
-
     "총수입": [
         323.0, 341.8, 351.9, 356.4, 371.8,
         401.8, 430.6, 465.3, 473.1, 478.8,
         570.5, 617.8, 573.9, 594.5
     ],
-
     "총지출": [
         304.4, 323.3, 337.7, 347.9, 372.0,
         384.9, 406.6, 434.1, 485.1, 549.9,
         601.0, 682.4, 610.7, 638.0
     ],
-
     "통합재정수지": [
         18.6, 18.5, 14.2, 8.5, -0.2,
         16.9, 24.0, 31.2, -12.0, -71.2,
         -30.5, -64.6, -36.8, -43.5
     ],
-
     "관리재정수지": [
         -13.5, -17.4, -21.1, -29.5, -38.0,
         -22.7, -18.5, -10.6, -54.4, -112.0,
@@ -74,7 +70,7 @@ df_debt = pd.DataFrame({
 })
 
 # =========================
-# 차트
+# 재정수지 (총수입/총지출)
 # =========================
 lhs_df = df_fin.melt(
     id_vars="연도",
@@ -89,6 +85,9 @@ lhs = alt.Chart(lhs_df).mark_line(point=True, strokeWidth=3).encode(
     color=alt.Color("지표:N")
 )
 
+# =========================
+# RHS (통합/관리 재정수지) - 수정 핵심
+# =========================
 rhs_df = df_fin.melt(
     id_vars="연도",
     value_vars=["통합재정수지", "관리재정수지"],
@@ -96,20 +95,34 @@ rhs_df = df_fin.melt(
     value_name="값"
 )
 
-rhs = alt.Chart(rhs_df).mark_bar(opacity=0.5).encode(
+rhs = alt.Chart(rhs_df).mark_bar(
+    size=10,   # 핵심: 바 폭 절반 수준으로 축소
+    opacity=0.85
+).encode(
     x=alt.X("연도:O"),
+    xOffset=alt.XOffset("지표:N"),  # 핵심: 바 분리 + 간격 생성
     y=alt.Y(
         "값:Q",
         title="재정수지 (RHS, 조 원)",
         scale=alt.Scale(domain=[-200, 200])
     ),
-    color=alt.Color("지표:N")
+    color=alt.Color(
+        "지표:N",
+        scale=alt.Scale(
+            domain=["통합재정수지", "관리재정수지"],
+            range=["#1f77b4", "#d62728"]
+        ),
+        title="RHS"
+    )
 )
 
 finance_chart = alt.layer(lhs, rhs).resolve_scale(
     y="independent"
 ).properties(height=800)
 
+# =========================
+# 국가채무 차트
+# =========================
 debt_bar = alt.Chart(df_debt).mark_bar().encode(
     x=alt.X("연도:O"),
     y=alt.Y("국가채무:Q", title="국가채무 (조 원, LHS)")
@@ -129,7 +142,7 @@ debt_chart = alt.layer(debt_bar, debt_line).resolve_scale(
 ).properties(height=600)
 
 # =========================
-# 화면 라우팅
+# 화면
 # =========================
 if menu == "대한민국 국가 재정통계":
 
