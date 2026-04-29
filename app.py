@@ -16,7 +16,7 @@ menu = st.sidebar.radio(
 )
 
 # =========================
-# 데이터
+# 데이터 (2011~2024 재정수지)
 # =========================
 years_fin = list(range(2011, 2025))
 
@@ -45,7 +45,7 @@ df_fin = pd.DataFrame({
 })
 
 # =========================
-# LHS 선 차트 (유지)
+# LHS 선 차트 (총수입/총지출)
 # =========================
 lhs_df = df_fin.melt(
     id_vars="연도",
@@ -54,14 +54,17 @@ lhs_df = df_fin.melt(
     value_name="값"
 )
 
-lhs = alt.Chart(lhs_df).mark_line(point=True, strokeWidth=3).encode(
+lhs = alt.Chart(lhs_df).mark_line(
+    point=True,
+    strokeWidth=3
+).encode(
     x=alt.X("연도:O"),
     y=alt.Y("값:Q", title="총수입 / 총지출 (LHS, 조 원)"),
     color=alt.Color("지표:N")
 )
 
 # =========================
-# RHS 바 차트 (간격 조정)
+# RHS 바 차트 (통합 / 관리)
 # =========================
 rhs_df = df_fin.melt(
     id_vars="연도",
@@ -71,15 +74,15 @@ rhs_df = df_fin.melt(
 )
 
 rhs = alt.Chart(rhs_df).mark_bar(
-    size=6,   # 바 폭 더 줄임
+    size=10,   # 바 폭 증가
     opacity=0.85
 ).encode(
     x=alt.X("연도:O"),
     xOffset=alt.XOffset(
         "지표:N",
         scale=alt.Scale(
-            paddingInner=0.15,  # 핵심: 같은 연도 내 바 간격 축소
-            paddingOuter=0.2
+            paddingInner=0.05,   # 바 간격 더 좁힘
+            paddingOuter=0.1
         )
     ),
     y=alt.Y(
@@ -97,7 +100,7 @@ rhs = alt.Chart(rhs_df).mark_bar(
 )
 
 # =========================
-# 결합 (선 차트 유지)
+# 결합 (선 + 바 유지)
 # =========================
 finance_chart = alt.layer(lhs, rhs).resolve_scale(
     y="independent"
@@ -120,12 +123,10 @@ debt_gdp = {
     2023: 46.9, 2024: 46.0
 }
 
-years_debt = list(range(2011, 2025))
-
 df_debt = pd.DataFrame({
-    "연도": years_debt,
-    "국가채무": [debt_total[y] for y in years_debt],
-    "GDP대비국가채무": [debt_gdp[y] for y in years_debt]
+    "연도": list(debt_total.keys()),
+    "국가채무": list(debt_total.values()),
+    "GDP대비국가채무": list(debt_gdp.values())
 })
 
 debt_bar = alt.Chart(df_debt).mark_bar().encode(
