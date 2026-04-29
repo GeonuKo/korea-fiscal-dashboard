@@ -16,7 +16,7 @@ menu = st.sidebar.radio(
 )
 
 # =========================
-# 데이터 (재정수지)
+# 데이터
 # =========================
 years_fin = list(range(2011, 2025))
 
@@ -45,6 +45,65 @@ df_fin = pd.DataFrame({
 })
 
 # =========================
+# LHS 선 차트 (유지)
+# =========================
+lhs_df = df_fin.melt(
+    id_vars="연도",
+    value_vars=["총수입", "총지출"],
+    var_name="지표",
+    value_name="값"
+)
+
+lhs = alt.Chart(lhs_df).mark_line(point=True, strokeWidth=3).encode(
+    x=alt.X("연도:O"),
+    y=alt.Y("값:Q", title="총수입 / 총지출 (LHS, 조 원)"),
+    color=alt.Color("지표:N")
+)
+
+# =========================
+# RHS 바 차트 (간격 조정)
+# =========================
+rhs_df = df_fin.melt(
+    id_vars="연도",
+    value_vars=["통합재정수지", "관리재정수지"],
+    var_name="지표",
+    value_name="값"
+)
+
+rhs = alt.Chart(rhs_df).mark_bar(
+    size=6,   # 바 폭 더 줄임
+    opacity=0.85
+).encode(
+    x=alt.X("연도:O"),
+    xOffset=alt.XOffset(
+        "지표:N",
+        scale=alt.Scale(
+            paddingInner=0.15,  # 핵심: 같은 연도 내 바 간격 축소
+            paddingOuter=0.2
+        )
+    ),
+    y=alt.Y(
+        "값:Q",
+        title="재정수지 (RHS, 조 원)",
+        scale=alt.Scale(domain=[-200, 200])
+    ),
+    color=alt.Color(
+        "지표:N",
+        scale=alt.Scale(
+            domain=["통합재정수지", "관리재정수지"],
+            range=["#1f77b4", "#d62728"]
+        )
+    )
+)
+
+# =========================
+# 결합 (선 차트 유지)
+# =========================
+finance_chart = alt.layer(lhs, rhs).resolve_scale(
+    y="independent"
+).properties(height=800)
+
+# =========================
 # 국가채무
 # =========================
 debt_total = {
@@ -69,60 +128,6 @@ df_debt = pd.DataFrame({
     "GDP대비국가채무": [debt_gdp[y] for y in years_debt]
 })
 
-# =========================
-# 재정수지 (총수입/총지출)
-# =========================
-lhs_df = df_fin.melt(
-    id_vars="연도",
-    value_vars=["총수입", "총지출"],
-    var_name="지표",
-    value_name="값"
-)
-
-lhs = alt.Chart(lhs_df).mark_line(point=True, strokeWidth=3).encode(
-    x=alt.X("연도:O"),
-    y=alt.Y("값:Q", title="총수입 / 총지출 (LHS, 조 원)"),
-    color=alt.Color("지표:N")
-)
-
-# =========================
-# RHS (통합/관리 재정수지) - 수정 핵심
-# =========================
-rhs_df = df_fin.melt(
-    id_vars="연도",
-    value_vars=["통합재정수지", "관리재정수지"],
-    var_name="지표",
-    value_name="값"
-)
-
-rhs = alt.Chart(rhs_df).mark_bar(
-    size=10,   # 핵심: 바 폭 절반 수준으로 축소
-    opacity=0.85
-).encode(
-    x=alt.X("연도:O"),
-    xOffset=alt.XOffset("지표:N"),  # 핵심: 바 분리 + 간격 생성
-    y=alt.Y(
-        "값:Q",
-        title="재정수지 (RHS, 조 원)",
-        scale=alt.Scale(domain=[-200, 200])
-    ),
-    color=alt.Color(
-        "지표:N",
-        scale=alt.Scale(
-            domain=["통합재정수지", "관리재정수지"],
-            range=["#1f77b4", "#d62728"]
-        ),
-        title="RHS"
-    )
-)
-
-finance_chart = alt.layer(lhs, rhs).resolve_scale(
-    y="independent"
-).properties(height=800)
-
-# =========================
-# 국가채무 차트
-# =========================
 debt_bar = alt.Chart(df_debt).mark_bar().encode(
     x=alt.X("연도:O"),
     y=alt.Y("국가채무:Q", title="국가채무 (조 원, LHS)")
