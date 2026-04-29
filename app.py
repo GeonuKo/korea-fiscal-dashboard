@@ -57,7 +57,7 @@ lhs = alt.Chart(lhs_df).mark_line(point=True, strokeWidth=3).encode(
 )
 
 # =========================
-# RHS (통합/관리 재정수지)
+# RHS (통합 / 관리 재정수지)
 # =========================
 rhs_df = df.melt(
     id_vars="연도",
@@ -71,7 +71,7 @@ rhs = alt.Chart(rhs_df).mark_bar(opacity=0.5).encode(
     y=alt.Y(
         "값:Q",
         title="재정수지 (RHS, 조 원)",
-        scale=alt.Scale(domain=[-100, 100])  # 핵심: 고정 축 범위
+        scale=alt.Scale(domain=[-200, 200])
     ),
     color=alt.Color("지표:N", title="RHS")
 )
@@ -92,12 +92,6 @@ chart = alt.layer(
 # Streamlit
 # =========================
 st.title("🇰🇷 대한민국 재정 통합 분석 대시보드")
-
-st.markdown("""
-- LHS: 총수입 / 총지출  
-- RHS: 통합재정수지 / 관리재정수지  
-- RHS 축 범위: -100 ~ +100 고정
-""")
 
 st.altair_chart(chart, use_container_width=True)
 
