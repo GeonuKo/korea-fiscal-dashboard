@@ -7,16 +7,13 @@ st.set_page_config(
     layout="wide"
 )
 
-# =========================
-# 사이드바
-# =========================
 menu = st.sidebar.radio(
     "대한민국 국가 재정통계",
     ["대한민국 국가 재정통계", "국가 재정 기본 개념", "총수입", "총지출"]
 )
 
 # =========================
-# 데이터 (2011~2024)
+# 데이터
 # =========================
 years = list(range(2011, 2025))
 
@@ -45,7 +42,7 @@ df = pd.DataFrame({
 })
 
 # =========================
-# LHS: 총수입 / 총지출 (선)
+# LHS LINE (총수입/총지출)
 # =========================
 lhs_df = df.melt(
     id_vars="연도",
@@ -59,12 +56,16 @@ lhs_line = alt.Chart(lhs_df).mark_line(
     strokeWidth=3
 ).encode(
     x=alt.X("연도:O"),
-    y=alt.Y("값:Q", title="총수입 / 총지출 (LHS, 조 원)"),
-    color=alt.Color("지표:N")
+    y=alt.Y(
+        "값:Q",
+        title="총수입 / 총지출 (LHS, 조 원)"
+    ),
+    color=alt.Color("지표:N"),
+    order="연도"
 )
 
 # =========================
-# RHS: 통합 / 관리 (바)
+# RHS BAR (통합 / 관리)
 # =========================
 rhs_df = df.melt(
     id_vars="연도",
@@ -74,15 +75,15 @@ rhs_df = df.melt(
 )
 
 rhs_bar = alt.Chart(rhs_df).mark_bar(
-    size=12,
-    opacity=0.85
+    size=14,
+    opacity=0.75
 ).encode(
     x=alt.X("연도:O"),
     xOffset=alt.XOffset(
         "지표:N",
         scale=alt.Scale(
-            paddingInner=0.05,
-            paddingOuter=0.1
+            paddingInner=0.02,   # 간격 더 좁힘
+            paddingOuter=0.05
         )
     ),
     y=alt.Y(
@@ -100,30 +101,20 @@ rhs_bar = alt.Chart(rhs_df).mark_bar(
 )
 
 # =========================
-# 결합 (LHS + RHS)
+# 결합 (핵심 수정 포인트)
 # =========================
-final_chart = alt.layer(
-    lhs_line,
-    rhs_bar
+chart = alt.layer(
+    rhs_bar,   # bar 먼저
+    lhs_line   # line 위로 올림 (중요)
 ).resolve_scale(
     y="independent"
-).properties(height=800)
+).properties(
+    height=800
+)
 
 # =========================
 # 출력
 # =========================
-if menu == "대한민국 국가 재정통계":
-    st.title("대한민국 국가 재정통계")
-    st.altair_chart(final_chart, use_container_width=True)
+st.title("대한민국 국가 재정통계")
 
-elif menu == "국가 재정 기본 개념":
-    st.title("국가 재정 기본 개념")
-    st.info("빈 화면")
-
-elif menu == "총수입":
-    st.title("총수입")
-    st.info("빈 화면")
-
-elif menu == "총지출":
-    st.title("총지출")
-    st.info("빈 화면")
+st.altair_chart(chart, use_container_width=True)
