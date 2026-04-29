@@ -41,58 +41,94 @@ df = pd.DataFrame({
 })
 
 # =========================
-# 2. line chart (총수입/총지출)
+# 2. LHS (총수입/총지출 - Line)
 # =========================
-line_df = df.melt(
+lhs_df = df.melt(
     id_vars="연도",
     value_vars=["총수입", "총지출"],
     var_name="지표",
     value_name="값"
 )
 
-line_chart = alt.Chart(line_df).mark_line(point=True, strokeWidth=3).encode(
+lhs_line = alt.Chart(lhs_df).mark_line(point=True, strokeWidth=3).encode(
     x=alt.X("연도:O", title="연도"),
-    y=alt.Y("값:Q", title="조 원"),
-    color=alt.Color("지표:N", title="수입/지출"),
+    y=alt.Y(
+        "값:Q",
+        title="총수입 / 총지출 (LHS, 조 원)"
+    ),
+    color=alt.Color("지표:N", title="LHS (총수입/총지출)"),
     tooltip=["연도", "지표", "값"]
 )
 
+# 값 라벨 (LHS)
+lhs_text = alt.Chart(lhs_df).mark_text(
+    dy=-10,
+    fontSize=10
+).encode(
+    x="연도:O",
+    y="값:Q",
+    text=alt.Text("값:Q", format=".1f"),
+    color=alt.value("black")
+)
+
 # =========================
-# 3. bar chart (재정수지)
+# 3. RHS (재정수지 - Bar)
 # =========================
-balance_df = df.melt(
+rhs_df = df.melt(
     id_vars="연도",
     value_vars=["통합재정수지", "관리재정수지"],
     var_name="지표",
     value_name="값"
 )
 
-bar_chart = alt.Chart(balance_df).mark_bar(opacity=0.5).encode(
+rhs_bar = alt.Chart(rhs_df).mark_bar(opacity=0.5).encode(
     x=alt.X("연도:O"),
-    y=alt.Y("값:Q", axis=alt.Axis(title="재정수지 (조 원)")),
-    color=alt.Color("지표:N", title="재정수지"),
+    y=alt.Y(
+        "값:Q",
+        axis=alt.Axis(title="재정수지 (RHS, 조 원)")
+    ),
+    color=alt.Color("지표:N", title="RHS (재정수지)"),
     tooltip=["연도", "지표", "값"]
 )
 
+# 값 라벨 (RHS)
+rhs_text = alt.Chart(rhs_df).mark_text(
+    dy=-10,
+    fontSize=10
+).encode(
+    x="연도:O",
+    y="값:Q",
+    text=alt.Text("값:Q", format=".1f"),
+    color=alt.value("black")
+)
+
 # =========================
-# 4. dual axis 결합
+# 4. 결합 (Dual Structure)
 # =========================
-combined = alt.layer(
-    line_chart,
-    bar_chart
+chart = alt.layer(
+    lhs_line,
+    lhs_text,
+    rhs_bar,
+    rhs_text
 ).resolve_scale(
     y="independent"
 ).properties(
-    height=600
+    height=650
 )
 
 # =========================
 # 5. Streamlit 출력
 # =========================
-st.title("🇰🇷 대한민국 재정 통합 대시보드")
-st.caption("총수입·총지출(선) + 통합재정수지·관리재정수지(막대)")
+st.title("🇰🇷 대한민국 재정 통합 분석 대시보드")
 
-st.altair_chart(combined, use_container_width=True)
+st.markdown(
+"""
+- **LHS (Left Y-axis)**: 총수입, 총지출  
+- **RHS (Right Y-axis)**: 통합재정수지, 관리재정수지  
+"""
+)
 
-with st.expander("데이터 보기"):
+st.altair_chart(chart, use_container_width=True)
+
+with st.expander("데이터 확인"):
     st.dataframe(df, use_container_width=True)
