@@ -41,10 +41,8 @@ df_fin = pd.DataFrame({
 })
 
 # =========================
-# 국가채무 데이터
+# 국가채무 데이터 (2011~2024로 제한)
 # =========================
-years_debt = list(range(1997, 2025))
-
 debt_total = {
     1997: 60.3, 1998: 80.4, 1999: 98.6, 2000: 111.2,
     2001: 121.8, 2002: 133.8, 2003: 165.8, 2004: 203.7,
@@ -65,6 +63,8 @@ debt_gdp = {
     2021: 43.7, 2022: 45.9, 2023: 46.9, 2024: 46.0
 }
 
+years_debt = list(range(2011, 2025))
+
 df_debt = pd.DataFrame({
     "연도": years_debt,
     "국가채무": [debt_total[y] for y in years_debt],
@@ -72,7 +72,7 @@ df_debt = pd.DataFrame({
 })
 
 # =========================
-# 재정수지 (LHS/RHS)
+# 재정수지 차트 (높이 증가)
 # =========================
 lhs_df = df_fin.melt(
     id_vars="연도",
@@ -104,24 +104,34 @@ rhs = alt.Chart(rhs_df).mark_bar(opacity=0.5).encode(
     color=alt.Color("지표:N")
 )
 
-finance_chart = alt.layer(lhs, rhs).resolve_scale(y="independent")
+finance_chart = alt.layer(lhs, rhs).resolve_scale(
+    y="independent"
+).properties(
+    height=800   # 세로 확장
+)
 
 # =========================
-# 국가채무 차트 (LHS: bar / RHS: line)
+# 국가채무 차트 (2011~2024 유지)
 # =========================
 debt_bar = alt.Chart(df_debt).mark_bar().encode(
     x=alt.X("연도:O"),
     y=alt.Y("국가채무:Q", title="국가채무 (조 원, LHS)")
 )
 
-debt_line = alt.Chart(df_debt).mark_line(point=True, strokeWidth=3, color="red").encode(
+debt_line = alt.Chart(df_debt).mark_line(
+    point=True,
+    strokeWidth=3,
+    color="red"
+).encode(
     x=alt.X("연도:O"),
-    y=alt.Y("GDP대비국가채무:Q", title="GDP 대비 국가채무 (%)"),
+    y=alt.Y("GDP대비국가채무:Q", title="GDP 대비 국가채무 (%)")
 )
 
 debt_chart = alt.layer(debt_bar, debt_line).resolve_scale(
     y="independent"
-).properties(height=500)
+).properties(
+    height=600
+)
 
 # =========================
 # Streamlit
@@ -137,5 +147,6 @@ st.altair_chart(debt_chart, use_container_width=True)
 with st.expander("데이터"):
     st.write("재정수지")
     st.dataframe(df_fin, use_container_width=True)
+
     st.write("국가채무")
     st.dataframe(df_debt, use_container_width=True)
