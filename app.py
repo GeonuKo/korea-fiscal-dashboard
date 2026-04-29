@@ -3,17 +3,17 @@ import streamlit as st
 import altair as alt
 
 st.set_page_config(
-    page_title="대한민국 재정 통합 분석",
+    page_title="대한민국 국가 재정통계",
     layout="wide"
 )
 
 # =========================
-# 데이터
+# 재정수지 데이터
 # =========================
-years = list(range(2011, 2025))
+years_fin = list(range(2011, 2025))
 
-df = pd.DataFrame({
-    "연도": years,
+df_fin = pd.DataFrame({
+    "연도": years_fin,
 
     "총수입": [
         323.0, 341.8, 351.9, 356.4, 371.8,
@@ -41,9 +41,40 @@ df = pd.DataFrame({
 })
 
 # =========================
-# LHS (총수입 / 총지출)
+# 국가채무 데이터
 # =========================
-lhs_df = df.melt(
+years_debt = list(range(1997, 2025))
+
+debt_total = {
+    1997: 60.3, 1998: 80.4, 1999: 98.6, 2000: 111.2,
+    2001: 121.8, 2002: 133.8, 2003: 165.8, 2004: 203.7,
+    2005: 247.9, 2006: 282.7, 2007: 299.2, 2008: 309.0,
+    2009: 359.6, 2010: 392.2, 2011: 420.5, 2012: 443.1,
+    2013: 489.8, 2014: 533.2, 2015: 591.5, 2016: 626.9,
+    2017: 660.2, 2018: 680.5, 2019: 723.2, 2020: 846.6,
+    2021: 970.7, 2022: 1067.4, 2023: 1126.8, 2024: 1175.0
+}
+
+debt_gdp = {
+    1997: 11.1, 1998: 1.7, 1999: 16.7, 2000: 16.5,
+    2001: 16.6, 2002: 16.4, 2003: 19.1, 2004: 21.6,
+    2005: 24.9, 2006: 27.0, 2007: 26.4, 2008: 25.7,
+    2009: 28.6, 2010: 28.4, 2011: 29.0, 2012: 29.5,
+    2013: 31.2, 2014: 32.5, 2015: 34.0, 2016: 34.2,
+    2017: 34.1, 2018: 33.9, 2019: 35.4, 2020: 41.1,
+    2021: 43.7, 2022: 45.9, 2023: 46.9, 2024: 46.0
+}
+
+df_debt = pd.DataFrame({
+    "연도": years_debt,
+    "국가채무": [debt_total[y] for y in years_debt],
+    "GDP대비국가채무": [debt_gdp[y] for y in years_debt]
+})
+
+# =========================
+# 재정수지 (LHS/RHS)
+# =========================
+lhs_df = df_fin.melt(
     id_vars="연도",
     value_vars=["총수입", "총지출"],
     var_name="지표",
@@ -53,13 +84,10 @@ lhs_df = df.melt(
 lhs = alt.Chart(lhs_df).mark_line(point=True, strokeWidth=3).encode(
     x=alt.X("연도:O"),
     y=alt.Y("값:Q", title="총수입 / 총지출 (LHS, 조 원)"),
-    color=alt.Color("지표:N", title="LHS")
+    color=alt.Color("지표:N")
 )
 
-# =========================
-# RHS (통합 / 관리 재정수지)
-# =========================
-rhs_df = df.melt(
+rhs_df = df_fin.melt(
     id_vars="연도",
     value_vars=["통합재정수지", "관리재정수지"],
     var_name="지표",
@@ -73,27 +101,41 @@ rhs = alt.Chart(rhs_df).mark_bar(opacity=0.5).encode(
         title="재정수지 (RHS, 조 원)",
         scale=alt.Scale(domain=[-200, 200])
     ),
-    color=alt.Color("지표:N", title="RHS")
+    color=alt.Color("지표:N")
 )
 
+finance_chart = alt.layer(lhs, rhs).resolve_scale(y="independent")
+
 # =========================
-# 결합
+# 국가채무 차트 (LHS: bar / RHS: line)
 # =========================
-chart = alt.layer(
-    lhs,
-    rhs
-).resolve_scale(
-    y="independent"
-).properties(
-    height=650
+debt_bar = alt.Chart(df_debt).mark_bar().encode(
+    x=alt.X("연도:O"),
+    y=alt.Y("국가채무:Q", title="국가채무 (조 원, LHS)")
 )
+
+debt_line = alt.Chart(df_debt).mark_line(point=True, strokeWidth=3, color="red").encode(
+    x=alt.X("연도:O"),
+    y=alt.Y("GDP대비국가채무:Q", title="GDP 대비 국가채무 (%)"),
+)
+
+debt_chart = alt.layer(debt_bar, debt_line).resolve_scale(
+    y="independent"
+).properties(height=500)
 
 # =========================
 # Streamlit
 # =========================
-st.title("🇰🇷 대한민국 재정 통합 분석 대시보드")
+st.title("대한민국 국가 재정통계")
 
-st.altair_chart(chart, use_container_width=True)
+st.subheader("재정수지 (총수입 / 총지출 / 통합 / 관리)")
+st.altair_chart(finance_chart, use_container_width=True)
+
+st.subheader("국가채무 및 GDP 대비 비율")
+st.altair_chart(debt_chart, use_container_width=True)
 
 with st.expander("데이터"):
-    st.dataframe(df, use_container_width=True)
+    st.write("재정수지")
+    st.dataframe(df_fin, use_container_width=True)
+    st.write("국가채무")
+    st.dataframe(df_debt, use_container_width=True)
