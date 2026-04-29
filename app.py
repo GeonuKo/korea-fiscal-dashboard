@@ -16,12 +16,12 @@ menu = st.sidebar.radio(
 )
 
 # =========================
-# 데이터 (2011~2024 재정수지)
+# 데이터 (2011~2024)
 # =========================
-years_fin = list(range(2011, 2025))
+years = list(range(2011, 2025))
 
-df_fin = pd.DataFrame({
-    "연도": years_fin,
+df = pd.DataFrame({
+    "연도": years,
     "총수입": [
         323.0, 341.8, 351.9, 356.4, 371.8,
         401.8, 430.6, 465.3, 473.1, 478.8,
@@ -45,16 +45,16 @@ df_fin = pd.DataFrame({
 })
 
 # =========================
-# LHS 선 차트 (총수입/총지출)
+# LHS: 총수입 / 총지출 (선)
 # =========================
-lhs_df = df_fin.melt(
+lhs_df = df.melt(
     id_vars="연도",
     value_vars=["총수입", "총지출"],
     var_name="지표",
     value_name="값"
 )
 
-lhs = alt.Chart(lhs_df).mark_line(
+lhs_line = alt.Chart(lhs_df).mark_line(
     point=True,
     strokeWidth=3
 ).encode(
@@ -64,24 +64,24 @@ lhs = alt.Chart(lhs_df).mark_line(
 )
 
 # =========================
-# RHS 바 차트 (통합 / 관리)
+# RHS: 통합 / 관리 (바)
 # =========================
-rhs_df = df_fin.melt(
+rhs_df = df.melt(
     id_vars="연도",
     value_vars=["통합재정수지", "관리재정수지"],
     var_name="지표",
     value_name="값"
 )
 
-rhs = alt.Chart(rhs_df).mark_bar(
-    size=10,   # 바 폭 증가
+rhs_bar = alt.Chart(rhs_df).mark_bar(
+    size=12,
     opacity=0.85
 ).encode(
     x=alt.X("연도:O"),
     xOffset=alt.XOffset(
         "지표:N",
         scale=alt.Scale(
-            paddingInner=0.05,   # 바 간격 더 좁힘
+            paddingInner=0.05,
             paddingOuter=0.1
         )
     ),
@@ -100,65 +100,21 @@ rhs = alt.Chart(rhs_df).mark_bar(
 )
 
 # =========================
-# 결합 (선 + 바 유지)
+# 결합 (LHS + RHS)
 # =========================
-finance_chart = alt.layer(lhs, rhs).resolve_scale(
+final_chart = alt.layer(
+    lhs_line,
+    rhs_bar
+).resolve_scale(
     y="independent"
 ).properties(height=800)
 
 # =========================
-# 국가채무
-# =========================
-debt_total = {
-    2011: 420.5, 2012: 443.1, 2013: 489.8, 2014: 533.2,
-    2015: 591.5, 2016: 626.9, 2017: 660.2, 2018: 680.5,
-    2019: 723.2, 2020: 846.6, 2021: 970.7, 2022: 1067.4,
-    2023: 1126.8, 2024: 1175.0
-}
-
-debt_gdp = {
-    2011: 29.0, 2012: 29.5, 2013: 31.2, 2014: 32.5,
-    2015: 34.0, 2016: 34.2, 2017: 34.1, 2018: 33.9,
-    2019: 35.4, 2020: 41.1, 2021: 43.7, 2022: 45.9,
-    2023: 46.9, 2024: 46.0
-}
-
-df_debt = pd.DataFrame({
-    "연도": list(debt_total.keys()),
-    "국가채무": list(debt_total.values()),
-    "GDP대비국가채무": list(debt_gdp.values())
-})
-
-debt_bar = alt.Chart(df_debt).mark_bar().encode(
-    x=alt.X("연도:O"),
-    y=alt.Y("국가채무:Q", title="국가채무 (조 원, LHS)")
-)
-
-debt_line = alt.Chart(df_debt).mark_line(
-    point=True,
-    strokeWidth=3,
-    color="red"
-).encode(
-    x=alt.X("연도:O"),
-    y=alt.Y("GDP대비국가채무:Q", title="GDP 대비 국가채무 (%)")
-)
-
-debt_chart = alt.layer(debt_bar, debt_line).resolve_scale(
-    y="independent"
-).properties(height=600)
-
-# =========================
-# 화면
+# 출력
 # =========================
 if menu == "대한민국 국가 재정통계":
-
     st.title("대한민국 국가 재정통계")
-
-    st.subheader("재정수지 (총수입 / 총지출 / 통합 / 관리)")
-    st.altair_chart(finance_chart, use_container_width=True)
-
-    st.subheader("국가채무 및 GDP 대비 비율")
-    st.altair_chart(debt_chart, use_container_width=True)
+    st.altair_chart(final_chart, use_container_width=True)
 
 elif menu == "국가 재정 기본 개념":
     st.title("국가 재정 기본 개념")
