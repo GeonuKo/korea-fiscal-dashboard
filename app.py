@@ -6,4 +6,4 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("대한민국 재정분석")
+st.title("대한민국 국가재정")
